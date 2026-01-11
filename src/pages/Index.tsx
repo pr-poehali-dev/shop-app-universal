@@ -324,7 +324,11 @@ const Index = () => {
         <section className="bg-gradient-to-r from-primary via-accent to-secondary rounded-3xl p-12 text-white text-center shadow-2xl animate-fade-in">
           <h2 className="text-4xl font-bold mb-4">Станьте продавцом на нашей платформе!</h2>
           <p className="text-xl mb-8 opacity-90">Миллионы покупателей ждут ваши товары</p>
-          <Button size="lg" className="bg-white text-primary hover:bg-white/90 rounded-full px-10 py-6 text-lg font-semibold shadow-xl">
+          <Button 
+            size="lg" 
+            onClick={() => window.location.href = '/seller'}
+            className="bg-white text-primary hover:bg-white/90 rounded-full px-10 py-6 text-lg font-semibold shadow-xl"
+          >
             <Icon name="Store" size={24} className="mr-2" />
             Начать продавать
           </Button>
