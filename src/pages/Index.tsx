@@ -11,12 +11,18 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import ProductModal from '@/components/ProductModal';
+import CartSheet, { CartItem } from '@/components/CartSheet';
+import CheckoutModal from '@/components/CheckoutModal';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
-  const [cartCount, setCartCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { toast } = useToast();
 
   const banners = [
     { id: 1, title: 'Супер распродажа!', subtitle: 'Скидки до 70%', gradient: 'from-primary to-accent' },
@@ -42,14 +48,84 @@ const Index = () => {
     { id: 6, name: 'Электросамокат City', price: 24999, rating: 4.9, reviews: 89, discount: 10, image: '🛴', seller: 'UrbanRide' },
   ];
 
-  const addToCart = (productName: string) => {
-    setCartCount(prev => prev + 1);
+  const addToCart = (productName: string, quantity: number = 1, size?: string) => {
+    const product = products.find(p => p.name === productName);
+    if (!product) return;
+
+    const existingItem = cartItems.find(
+      item => item.id === product.id && item.size === size
+    );
+
+    if (existingItem) {
+      setCartItems(items =>
+        items.map(item =>
+          item.id === product.id && item.size === size
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        )
+      );
+    } else {
+      const newItem: CartItem = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        discount: product.discount,
+        image: product.image,
+        seller: product.seller,
+        quantity,
+        size,
+      };
+      setCartItems(items => [...items, newItem]);
+    }
+
+    toast({
+      title: 'Товар добавлен в корзину',
+      description: `${productName} ${size ? `(${size})` : ''} × ${quantity}`,
+    });
+  };
+
+  const updateCartQuantity = (id: number, quantity: number) => {
+    setCartItems(items =>
+      items.map(item => (item.id === id ? { ...item, quantity } : item))
+    );
+  };
+
+  const removeFromCart = (id: number) => {
+    setCartItems(items => items.filter(item => item.id !== id));
+    toast({
+      title: 'Товар удален из корзины',
+      variant: 'destructive',
+    });
   };
 
   const openProductModal = (product: typeof products[0]) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
   };
+
+  const handleCheckout = () => {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutSuccess = () => {
+    setCartItems([]);
+    setIsCheckoutOpen(false);
+    toast({
+      title: 'Спасибо за заказ!',
+      description: 'Мы свяжемся с вами в ближайшее время',
+    });
+  };
+
+  const cartTotal = cartItems.reduce((sum, item) => {
+    const itemPrice = item.discount > 0
+      ? Math.round(item.price * (1 - item.discount / 100))
+      : item.price;
+    return sum + itemPrice * item.quantity;
+  }, 0);
+  const deliveryFee = cartTotal >= 2000 ? 0 : 300;
+  const total = cartTotal + deliveryFee;
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/30 to-background">
@@ -85,7 +161,12 @@ const Index = () => {
                   3
                 </Badge>
               </Button>
-              <Button variant="ghost" size="icon" className="relative rounded-xl hover:bg-primary/10 transition-all">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCartOpen(true)}
+                className="relative rounded-xl hover:bg-primary/10 transition-all"
+              >
                 <Icon name="ShoppingCart" size={24} />
                 {cartCount > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-secondary text-xs animate-scale-in">
@@ -305,6 +386,23 @@ const Index = () => {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAddToCart={addToCart}
+      />
+
+      <CartSheet
+        open={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cartItems}
+        onUpdateQuantity={updateCartQuantity}
+        onRemoveItem={removeFromCart}
+        onCheckout={handleCheckout}
+      />
+
+      <CheckoutModal
+        open={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        items={cartItems}
+        total={total}
+        onSuccess={handleCheckoutSuccess}
       />
     </div>
   );
