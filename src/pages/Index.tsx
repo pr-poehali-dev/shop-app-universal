@@ -10,10 +10,13 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import ProductModal from '@/components/ProductModal';
 
 const Index = () => {
   const [cartCount, setCartCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const banners = [
     { id: 1, title: 'Супер распродажа!', subtitle: 'Скидки до 70%', gradient: 'from-primary to-accent' },
@@ -41,6 +44,11 @@ const Index = () => {
 
   const addToCart = (productName: string) => {
     setCartCount(prev => prev + 1);
+  };
+
+  const openProductModal = (product: typeof products[0]) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
   };
 
   return (
@@ -158,6 +166,7 @@ const Index = () => {
             {products.map((product, index) => (
               <Card 
                 key={product.id}
+                onClick={() => openProductModal(product)}
                 className="group cursor-pointer hover:shadow-2xl transition-all duration-300 border-2 hover:border-primary animate-fade-in overflow-hidden"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
@@ -214,7 +223,10 @@ const Index = () => {
                         </p>
                       </div>
                       <Button 
-                        onClick={() => addToCart(product.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(product.name);
+                        }}
                         className="bg-gradient-to-r from-primary to-accent hover:opacity-90 rounded-xl shadow-lg"
                       >
                         <Icon name="ShoppingCart" size={18} className="mr-2" />
@@ -287,6 +299,13 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <ProductModal
+        product={selectedProduct}
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddToCart={addToCart}
+      />
     </div>
   );
 };
